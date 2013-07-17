@@ -19,7 +19,7 @@ Installation
     
 #. Add the `mptt_comments` directory to your Python path.
 
-#. Add the needed apps to `INSTALLED_APPS` ::
+#. Add the needed apps to `INSTALLED_APPS` in `settings.py` ::
 
     'django.contrib.comments',
     'django.contrib.markup',
@@ -27,9 +27,17 @@ Installation
     'mptt',
     'mptt_comments'
 
-#. Add `mptt_comments.urls` to your projects urlconf ::
+#. Add or change `COMMENTS_APP` in `settings.py` ::
+
+    COMMENTS_APP = "mptt_comments"
+
+#. Add `mptt_comments.urls` to your project's urlconf ::
 
     (r'^comments/', include('mptt_comments.urls')),
+
+#. Add `i18n.javascript_catalog` packages to your project's urlconf ::
+
+    (r'^jsi18n/(?P<packages>\S+?)/$', 'django.views.i18n.javascript_catalog'),
 
 #. Add the required code to the objects detail page (see Usage)
 
