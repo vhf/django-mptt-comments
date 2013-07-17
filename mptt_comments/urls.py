@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import patterns, url
 from django.contrib.comments.urls import urlpatterns as contrib_comments_urlpatterns
 from django.conf import settings
 
