@@ -18,14 +18,20 @@ from django.contrib.comments.views.utils import next_redirect
 from django.contrib.comments.views.comments import CommentPostBadRequest
 from django.contrib.comments import signals, get_form, get_model
 
+try:
+    from django.utils.timezone import now
+except ImportError:
+    now = datetime.datetime.now
+
 from mptt_comments.decorators import login_required_ajax
 
 
 def _lookup_content_object(data):
     # Look up the object we're trying to comment about
-    ctype = data.get("content_type")
-    object_pk = data.get("object_pk")
-    parent_pk = data.get("parent_pk")
+    ctype = data.get("content_type", None)
+    ctype_pk = data.get("content_type_pk", None)
+    object_pk = data.get("object_pk", None)
+    parent_pk = data.get("parent_pk", None)
 
     if parent_pk:
         try:
@@ -36,10 +42,13 @@ def _lookup_content_object(data):
             return CommentPostBadRequest(
                 "Parent comment with PK %r does not exist." %
                 escape(parent_pk))
-    elif ctype and object_pk:
+    elif (ctype or ctype_pk) and object_pk:
         try:
             parent_comment = None
-            model = models.get_model(*ctype.split(".", 1))
+            if ctype:
+                model = models.get_model(*ctype.split(".", 1))
+            else:
+                model = ContentType.objects.get(pk=ctype_pk).model_class()
             target = model._default_manager.get(pk=object_pk)
         except TypeError:
             return CommentPostBadRequest(
@@ -59,7 +68,7 @@ def _lookup_content_object(data):
 
 
 @login_required_ajax
-def new_comment(request, parent_pk=None, content_type=None, object_pk=None, *args, **kwargs):
+def new_comment(request, parent_pk=None, content_type=None, content_type_pk=None, object_pk=None, *args, **kwargs):
     """
     Display the form used to post a reply.
 
@@ -70,6 +79,7 @@ def new_comment(request, parent_pk=None, content_type=None, object_pk=None, *arg
     data = {
         'parent_pk': parent_pk,
         'content_type': content_type,
+        'content_type_pk': content_type_pk,
         'object_pk': object_pk,
     }
     response = _lookup_content_object(data)
@@ -87,7 +97,10 @@ def new_comment(request, parent_pk=None, content_type=None, object_pk=None, *arg
         "comments/%s_new_form%s.html" % (model._meta.app_label, is_ajax),
         "comments/new_form%s.html" % is_ajax,
     ]
-    return TemplateResponse(request, template_list, {"form": form})
+    return TemplateResponse(request, template_list, {
+        "form": form,
+        "allow_post": not form.errors,
+    })
 
 
 @login_required_ajax
@@ -110,6 +123,7 @@ def post_comment(request, next=None, *args, **kwargs):
     data = request.POST.copy()
 
     data["user"] = request.user
+    data['name'] = 'noname'
 
     response = _lookup_content_object(data)
     if isinstance(response, HttpResponse):
@@ -142,7 +156,7 @@ def post_comment(request, next=None, *args, **kwargs):
             'comment': form.data.get("comment", ""),
             'parent': parent_comment,
             'level': parent_comment and parent_comment.level + 1 or 0,
-            'submit_date': datetime.datetime.now(),
+            'submit_date': now(),
             'rght': 0,
             'lft': 0,
             'user': request.user,
@@ -183,7 +197,7 @@ def post_comment(request, next=None, *args, **kwargs):
         request=request
     )
 
-    return next_redirect(request, next, 'comments-comment-done%s' % (is_ajax and '-ajax' or ''), c=comment._get_pk_val())
+    return next_redirect(request, fallback=next or 'comments-comment-done%s' % (is_ajax and '-ajax' or ''), c=comment._get_pk_val())
 
 
 def confirmation_view(template, doc="Display a confirmation view.", is_ajax=False, *args, **kwargs):

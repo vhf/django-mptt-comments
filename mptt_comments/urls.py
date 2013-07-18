@@ -12,7 +12,7 @@ urlpatterns = patterns(
         'new_comment',
         name='comment-reply'
         ),
-    url(r'^new_comment/(?P<content_type>[\w.]+)/(?P<object_pk>\d+)/$',
+    url(r'^new_comment/(?P<content_type_pk>[\d.]+)/(?P<object_pk>\d+)/$',
         'new_comment',
         name='comment-toplevel-reply'
         ),
@@ -37,7 +37,7 @@ urlpatterns = patterns(
         'comments_subtree',
         name='comments-subtree'
         ),
-    url(r'^detail/(\d+)/$',
+    url(r'^detail/(\d+|preview)/$',
         'comments_subtree',
         name='comment-detail',
         kwargs={'include_self': True, 'include_ancestors': True}

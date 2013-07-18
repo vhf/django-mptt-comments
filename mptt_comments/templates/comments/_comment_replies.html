@@ -12,7 +12,7 @@
             <span class="comment_replies" data-commentscount="0"></span>
         {% endif %}
         {% if not comment.is_removed %}
-            <a class="comment_post_new" href="#post_new_comment">
+            <a class="comment_post_new" href="{% url "comment-toplevel-reply" comment.content_type.pk comment.object_pk %}">
                 {% trans "Post a new comment" %}
             </a> |
             <a class="comment_reply" href="{% url "comment-reply" comment.pk %}">
