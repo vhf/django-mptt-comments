@@ -430,7 +430,7 @@ def mptt_comments_media_css(context):
     }
 
 
-def display_comment_toplevel_for(target):
+def display_comment_toplevel_for(context, target):
     model = target.__class__
 
     template_list = [
@@ -442,8 +442,8 @@ def display_comment_toplevel_for(target):
     return render_to_string(
         template_list, {
             "object": target,
-        }
-        # RequestContext(context['request'], {})
+        },
+        template.RequestContext(context['request'], {})
     )
 
 
@@ -486,7 +486,7 @@ def mptt_comment_print_collapse_state(parser, token):
 register.filter(children_count)
 
 register.simple_tag(mptt_comment_form_target)
-register.simple_tag(display_comment_toplevel_for)
+register.simple_tag(display_comment_toplevel_for, takes_context=True)
 
 register.inclusion_tag(
     'comments/comments_media.html', takes_context=True)(mptt_comments_media)
